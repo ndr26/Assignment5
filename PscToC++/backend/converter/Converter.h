@@ -60,6 +60,12 @@ public:
     Object visitCompoundStatement(PascalParser::CompoundStatementContext *ctx) override;
     Object visitAssignmentStatement(PascalParser::AssignmentStatementContext *ctx) override;
     Object visitRepeatStatement(PascalParser::RepeatStatementContext *ctx) override;
+    Object visitWhileStatement(PascalParser::WhileStatementContext *ctx) override; 
+    Object visitForStatement(PascalParser::ForStatementContext *ctx) override;
+    Object visitIfStatement(PascalParser::IfStatementContext* ctx) override;
+    Object visitCaseStatement(PascalParser::CaseStatementContext* ctx) override;
+    Object visitProcedureStatement(PascalParser::ProcedureCallStatementContext* ctx) override;
+    Object visitFunctionCallStatement(PascalParser::FunctionCallStatementContext* ctx) override;
     Object visitExpression(PascalParser::ExpressionContext *ctx) override;
     Object visitSimpleExpression(PascalParser::SimpleExpressionContext *ctx) override;
     Object visitTerm(PascalParser::TermContext *ctx) override;
