@@ -424,6 +424,137 @@ Object Converter::visitRepeatStatement(PascalParser::RepeatStatementContext *ctx
     return nullptr;
 }
 
+// While Statement
+Object Converter::visitWhileStatement(PascalParser::WhileStatementContext* ctx) {
+    code.emit("while  (");
+    code.emit(visit(ctx->expression()).as<string>());
+    code.emit(") ");
+
+    visit(ctx->statement());
+
+    return nullptr;
+}
+
+// For Statement
+Object Converter::visitForStatement(PascalParser::ForStatementContext* ctx)
+{
+    code.emit("for(");
+    string var = (visit(ctx->variable())).as<string>();
+    code.emit(var);
+    code.emit("=");
+    code.emit(visit(ctx->expression(0)).as<string>());
+    code.emit(";");
+    code.emit(var);
+
+    bool to = ctx->TO() != nullptr;
+    if (to) code.emit("<");
+    else code.emit(">");
+    code.emit(visit(ctx->expression(1)).as<string>());
+    code.emit(";");
+
+    code.emit(var);
+    if (to) code.emit("++");
+    else code.emit("--");
+    code.emit(")");
+
+
+    code.emit(visit(ctx->statement()).as<string>());
+
+
+    return nullptr;
+}
+
+// If Statement
+Object Converter::visitIfStatement(PascalParser::IfStatementContext* ctx)
+{
+    code.emit("if  (");
+    code.emit(visit(ctx->expression()).as<string>());
+    code.emit(") ");
+
+    visit(ctx->trueStatement());
+
+    if (ctx->falseStatement() != nullptr) {
+        code.emitStart("else ");
+        visit(ctx->falseStatement());
+    }
+
+    return nullptr;
+}
+
+// Case Statement
+Object Converter::visitCaseStatement(PascalParser::CaseStatementContext* ctx)
+{
+    code.emit("switch(");
+    code.emit(visit(ctx->expression()).as<string>());
+    code.emit(") {");
+    code.indent();
+
+    PascalParser::CaseBranchListContext* branchListCtx = ctx->caseBranchList();
+    for (PascalParser::CaseBranchContext* branchCtx : branchListCtx->caseBranch())
+    {
+        PascalParser::CaseConstantListContext* constListCtx = branchCtx->caseConstantList();
+        PascalParser::StatementContext* stmtCtx = branchCtx->statement();
+
+        if (constListCtx != nullptr) {
+            // This will loop over the CASE constants of each CASE branch.
+            for (PascalParser::CaseConstantContext* caseConstCtx : constListCtx->caseConstant()) {
+                code.emitStart("case ");
+                code.emit(to_string(caseConstCtx->value));
+                code.emitEnd(":");
+            }
+
+            visit(stmtCtx);
+            code.emitLine("break; ");
+        }
+        else {
+            visit(branchCtx);
+        }
+    }
+    code.emit("}");
+
+    return nullptr;
+}
+
+// Procedure Calls Statement
+Object Converter::visitProcedureStatement(PascalParser::ProcedureCallStatementContext* ctx)
+{
+    string name = (visit(ctx->procedureName()));
+    code.emit(name);
+    code.emit("(");
+    //Parameters - argument lists
+    string param = (visit(ctx->argumentList()));
+    code.emit(")");
+    code.emit(";");
+
+    return nullptr;
+}
+
+// Function Calls Statement
+Object Converter::visitFunctionCallFactor(PascalParser::FunctionCallFactorContext* ctx)
+{
+    PascalParser::FunctionCallContext* callCtx = ctx->functionCall();
+    SymtabEntry* routineId = callCtx->functionName()->entry;
+    PascalParser::ArgumentListContext* argListCtx = callCtx->argumentList();
+    string name = routineId->getName();
+    //Necessary to have it code.emit the return type
+    code.emit(name);
+    code.emit("(");
+    //Parameters - argument lists
+    vector<SymtabEntry*>* parms = routineId->getRoutineParameters();
+    for (int i = 0; i < parms->size(); i++)
+    {
+        SymtabEntry* parmId = (*parms)[i];
+        string parmName = parmId->getName();
+        code.emit(parmName);
+        if (i - parms->size() > 0)
+            code.emit(",");
+    }
+    code.emit(")");
+    code.emit(";");
+
+    return nullptr;
+}
+
 Object Converter::visitExpression(PascalParser::ExpressionContext *ctx)
 {
     PascalParser::SimpleExpressionContext *simpleCtx1 =
